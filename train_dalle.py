@@ -94,6 +94,8 @@ train_group.add_argument('--keep_n_checkpoints', default = None, type = int, hel
 
 train_group.add_argument('--batch_size', default = 4, type = int, help = 'Batch size')
 
+train_group.add_argument('--num_workers', default = 0, type = int, help = 'Number of workers for dataloading')
+
 train_group.add_argument('--ga_steps', default = 1, type = int, help = 'Number of steps to accumulate gradients across per each iteration. DeepSpeed only.')
 
 train_group.add_argument('--learning_rate', default = 3e-4, type = float, help = 'Learning rate')
@@ -383,13 +385,13 @@ else:
 
 if ENABLE_WEBDATASET:
     # WebLoader for WebDataset and DeepSpeed compatibility
-    dl = wds.WebLoader(ds, batch_size=None, shuffle=False) # optionally add num_workers=2 (n) argument
+    dl = wds.WebLoader(ds, batch_size=None, shuffle=False, num_workers=args.num_workers) # optionally add num_workers=2 (n) argument
     number_of_batches = DATASET_SIZE // (BATCH_SIZE * distr_backend.get_world_size())
     dl = dl.repeat(2).slice(number_of_batches)
     dl.length = number_of_batches
 else:
     # Regular DataLoader for image-text-folder datasets
-    dl = DataLoader(ds, batch_size=BATCH_SIZE, shuffle=is_shuffle, drop_last=True, sampler=data_sampler)
+    dl = DataLoader(ds, batch_size=BATCH_SIZE, shuffle=is_shuffle, drop_last=True, sampler=data_sampler, num_workers=args.num_workers)
 
 
 # initialize DALL-E
